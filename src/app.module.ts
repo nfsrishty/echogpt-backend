@@ -2,6 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { CryptoModule } from './common/crypto/crypto.module';
@@ -10,6 +11,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { ApiUsageMiddleware } from './common/middleware/api-usage.middleware';
 import { envValidationSchema } from './config/env.validation';
+import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProvidersModule } from './providers/providers.module';
 import { QuotaGuard } from './subscriptions/quota.guard';
@@ -35,6 +37,8 @@ import { UsersModule } from './users/users.module';
     ProvidersModule,
     ChatModule,
     SearchModule,
+    AdminModule,
+    HealthModule,
   ],
   providers: [
     // Global guards run in this order:
