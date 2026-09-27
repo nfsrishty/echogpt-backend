@@ -13,6 +13,8 @@ import { AuthenticatedRequest } from '../interfaces/auth-user.interface';
  * The write is fire-and-forget: logging must never slow down or break the
  * actual request. At larger scale this would go through a queue instead.
  */
+const HEALTH_PATH = '/api/v1/health';
+
 @Injectable()
 export class ApiUsageMiddleware implements NestMiddleware {
   private readonly logger = new Logger(ApiUsageMiddleware.name);
@@ -22,9 +24,20 @@ export class ApiUsageMiddleware implements NestMiddleware {
   use(request: AuthenticatedRequest, response: Response, next: NextFunction) {
     const startedAt = process.hrtime.bigint();
 
-    response.on('finish', () => {
+    let logged = false;
+
+    // 'finish' = response fully sent. 'close' = connection ended, which is
+    // the only event we get when the client disconnects mid-response.
+    const onDone = async () => {
+      if (logged) {
+        return;
+      }
+      logged = true;
+      await request.handlerSettled?.catch(() => undefined);
+
       const path = request.originalUrl.split('?')[0]; // never store query strings
-      if (!path.startsWith('/api/')) {
+      // Health probes run every few seconds; logging them would drown real traffic.
+      if (!path.startsWith('/api/') || path === HEALTH_PATH) {
         return;
       }
 
@@ -48,8 +61,11 @@ export class ApiUsageMiddleware implements NestMiddleware {
         userAgent: request.headers['user-agent']?.slice(0, 512),
       };
 
-      void this.write(data);
-    });
+      await this.write(data);
+    };
+
+    response.on('finish', () => void onDone());
+    response.on('close', () => void onDone());
 
     next();
   }
