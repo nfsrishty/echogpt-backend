@@ -26,7 +26,11 @@ export const envValidationSchema = Joi.object({
   // Comma-separated list, e.g. "chrome-extension://abc,http://localhost:5173"
   CORS_ORIGINS: Joi.string().default('*'),
 
-  // Web search backend (Tavily). Optional until the search module is built.
+  // Web search (Tavily). Without a key, Tavily's keyless mode is used
+  // (lower limits). A free key gives 1,000 searches/month.
   TAVILY_API_KEY: Joi.string().allow('').optional(),
+  TAVILY_BASE_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .default('https://api.tavily.com'),
   SEARCH_CACHE_TTL_SECONDS: Joi.number().integer().min(0).default(3600),
 });
