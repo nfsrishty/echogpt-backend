@@ -9,7 +9,19 @@ export interface AuthUser {
   sessionId: string;
 }
 
-export type AuthenticatedRequest = Request & { user?: AuthUser };
+/** Filled in by AI routes so the usage log can record provider and tokens. */
+export interface UsageContext {
+  providerId?: string;
+  promptTokens?: number;
+  completionTokens?: number;
+}
+
+export type AuthenticatedRequest = Request & {
+  user?: AuthUser;
+  usage?: UsageContext;
+  /** Set by QuotaGuard on @ConsumesQuota() routes. */
+  consumesQuota?: boolean;
+};
 
 /** Claims inside the short-lived access token. */
 export interface JwtAccessPayload {

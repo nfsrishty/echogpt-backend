@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -6,8 +6,12 @@ import { AuthModule } from './auth/auth.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { ApiUsageMiddleware } from './common/middleware/api-usage.middleware';
 import { envValidationSchema } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
+import { QuotaGuard } from './subscriptions/quota.guard';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -21,13 +25,21 @@ import { PrismaModule } from './prisma/prisma.module';
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 100 }]),
     PrismaModule,
     AuthModule,
+    UsersModule,
+    SubscriptionsModule,
   ],
   providers: [
-    // Global guards run in this order: rate limit -> authenticate -> authorize.
+    // Global guards run in this order:
+    // rate limit -> authenticate -> authorize (role) -> daily quota
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: QuotaGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(ApiUsageMiddleware).forRoutes('{*splat}');
+  }
+}
