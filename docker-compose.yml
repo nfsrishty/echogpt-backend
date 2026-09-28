@@ -18,5 +18,25 @@ services:
       timeout: 5s
       retries: 10
 
+  # The API itself. Behind the "app" profile, so `docker compose up -d` still
+  # starts only the database for local development (npm run start:dev).
+  # Run everything with:  docker compose --profile app up --build
+  api:
+    build: .
+    container_name: echogpt-api
+    profiles: ['app']
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      # Inside the Docker network the database is "postgres:5432", not localhost:5433.
+      DATABASE_URL: postgresql://echogpt:echogpt@postgres:5432/echogpt?schema=public
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - '3000:3000'
+
 volumes:
   postgres_data:
