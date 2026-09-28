@@ -39,6 +39,27 @@ export class ChatMessageDto {
   createdAt: Date;
 }
 
+/** Same shape as ChatMessageDto; separate class only so Swagger shows a USER example. */
+export class UserChatMessageDto extends ChatMessageDto {
+  @ApiProperty({ enum: MessageRole, example: MessageRole.USER })
+  declare role: MessageRole;
+
+  @ApiProperty({ example: 'Explain quantum computing in simple terms' })
+  declare content: string;
+
+  @ApiProperty({ type: String, nullable: true, example: null })
+  declare model: string | null;
+
+  @ApiProperty({ type: String, nullable: true, format: 'uuid', example: null })
+  declare providerId: string | null;
+
+  @ApiProperty({ type: Number, nullable: true, example: null })
+  declare promptTokens: number | null;
+
+  @ApiProperty({ type: Number, nullable: true, example: null })
+  declare completionTokens: number | null;
+}
+
 export class SendMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
   conversationId: string;
@@ -46,7 +67,7 @@ export class SendMessageResponseDto {
   @ApiProperty({ type: ProviderRefDto })
   provider: ProviderRefDto;
 
-  @ApiProperty({ type: ChatMessageDto })
+  @ApiProperty({ type: UserChatMessageDto })
   userMessage: ChatMessageDto;
 
   @ApiProperty({ type: ChatMessageDto })
@@ -84,4 +105,48 @@ export class ConversationListResponseDto {
 export class ConversationDetailDto extends ConversationSummaryDto {
   @ApiProperty({ type: ChatMessageDto, isArray: true })
   messages: ChatMessageDto[];
+}
+
+export class CompareResultDto {
+  @ApiProperty({ type: ProviderRefDto })
+  provider: ProviderRefDto;
+
+  @ApiProperty({ example: 'gpt-4o' })
+  model: string;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'The capital of Australia is Canberra.',
+  })
+  content: string | null;
+
+  @ApiProperty({ type: Number, nullable: true, example: 18 })
+  promptTokens: number | null;
+
+  @ApiProperty({ type: Number, nullable: true, example: 9 })
+  completionTokens: number | null;
+
+  @ApiProperty({ example: 812, description: 'How long this provider took' })
+  latencyMs: number;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: null,
+    description: 'Why this provider failed; the others are still returned',
+  })
+  error: string | null;
+}
+
+export class CompareResponseDto {
+  @ApiProperty({ example: 'What is the capital of Australia? One sentence.' })
+  message: string;
+
+  @ApiProperty({
+    type: CompareResultDto,
+    isArray: true,
+    description: 'One result per provider, in the order requested',
+  })
+  results: CompareResultDto[];
 }

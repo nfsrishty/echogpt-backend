@@ -8,10 +8,10 @@ export class UserProfileResponseDto {
   })
   id: string;
 
-  @ApiProperty({ example: 'sonny@example.com' })
+  @ApiProperty({ example: 'jane@example.com' })
   email: string;
 
-  @ApiProperty({ example: 'Sonny Rahman' })
+  @ApiProperty({ example: 'Jane Doe' })
   fullName: string;
 
   @ApiProperty({

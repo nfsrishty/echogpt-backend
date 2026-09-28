@@ -10,7 +10,7 @@ import {
 
 export class UpdateProfileDto {
   @ApiPropertyOptional({
-    example: 'Sonny Rahman',
+    example: 'Jane Doe',
     minLength: 2,
     maxLength: 100,
   })

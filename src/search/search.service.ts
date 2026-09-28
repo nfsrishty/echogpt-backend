@@ -9,6 +9,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { AiProvider, Prisma } from '@prisma/client';
 import { sha256 } from '../common/utils/hash.util';
+import { escapeLike } from '../common/utils/sql.util';
 import {
   buildPaginationMeta,
   PaginationQueryDto,
@@ -215,7 +216,7 @@ export class SearchService {
     prefix: string,
   ): Promise<SuggestionDto[]> {
     const normalizedPrefix = this.normalize(prefix);
-    const likePattern = `${normalizedPrefix.replace(/[\\%_]/g, '\\$&')}%`;
+    const likePattern = `${escapeLike(normalizedPrefix)}%`;
 
     // Raw SQL on purpose: Prisma's startsWith does not escape % and _,
     // so typing "%" would match every query.

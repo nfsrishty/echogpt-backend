@@ -10,6 +10,7 @@ import { HttpAdapterHost } from '@nestjs/core';
 import { Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import { ErrorResponseDto } from '../dto/error-response.dto';
+import { httpStatusText } from '../utils/http-status.util';
 
 interface ResolvedError {
   statusCode: number;
@@ -64,7 +65,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const statusCode = exception.getStatus();
       const response = exception.getResponse();
       let message: string | string[] = exception.message;
-      let error = this.statusName(statusCode);
+      let error = httpStatusText(statusCode);
 
       if (typeof response === 'object' && response !== null) {
         const body = response as {
@@ -76,6 +77,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
 
       return { statusCode, error, message };
+    }
+
+    // Errors thrown by Express middleware before Nest sees the request, e.g.
+    // body-parser's 413 "request entity too large". They follow the
+    // http-errors convention: a 4xx `status` plus `expose: true`.
+    if (this.isExposedClientError(exception)) {
+      return this.build(
+        exception.status,
+        exception.type === 'entity.too.large'
+          ? 'Request body is too large (limit: 1 MB)'
+          : exception.message,
+      );
     }
 
     if (exception instanceof Prisma.PrismaClientKnownRequestError) {
@@ -101,21 +114,28 @@ export class AllExceptionsFilter implements ExceptionFilter {
     );
   }
 
-  private build(statusCode: number, message: string): ResolvedError {
-    return { statusCode, error: this.statusName(statusCode), message };
+  private isExposedClientError(
+    exception: unknown,
+  ): exception is { status: number; message: string; type?: string } {
+    if (typeof exception !== 'object' || exception === null) {
+      return false;
+    }
+    const candidate = exception as {
+      status?: unknown;
+      expose?: unknown;
+      message?: unknown;
+    };
+
+    return (
+      typeof candidate.status === 'number' &&
+      candidate.status >= 400 &&
+      candidate.status < 500 &&
+      candidate.expose === true &&
+      typeof candidate.message === 'string'
+    );
   }
 
-  /** 429 -> "Too Many Requests" */
-  private statusName(statusCode: number): string {
-    const name = HttpStatus[statusCode] as string | undefined;
-    if (!name) {
-      return 'Error';
-    }
-
-    return name
-      .toLowerCase()
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+  private build(statusCode: number, message: string): ResolvedError {
+    return { statusCode, error: httpStatusText(statusCode), message };
   }
 }

@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PlanTier, Role, RoleName, User } from '@prisma/client';
@@ -15,6 +16,7 @@ import {
   verifyPassword,
 } from '../common/utils/password.util';
 import { ClientMeta } from '../common/utils/request-meta.util';
+import { describeUserAgent } from '../common/utils/user-agent.util';
 import {
   AuthResponseDto,
   AuthUserResponseDto,
@@ -22,6 +24,7 @@ import {
 } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { SessionResponseDto } from './dto/session-response.dto';
 import { EmailVerificationService } from './email-verification.service';
 import { TokenService } from './token.service';
 
@@ -111,6 +114,47 @@ export class AuthService {
 
   async logoutAll(user: AuthUser): Promise<number> {
     return this.tokenService.revokeAllSessions(user.id);
+  }
+
+  /** Active sessions (logged-in devices) of the user, newest activity first. */
+  async listSessions(user: AuthUser): Promise<SessionResponseDto[]> {
+    const sessions = await this.prisma.session.findMany({
+      where: {
+        userId: user.id,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { lastUsedAt: 'desc' },
+    });
+
+    return sessions.map((session) => ({
+      id: session.id,
+      device: describeUserAgent(session.userAgent),
+      userAgent: session.userAgent,
+      ipAddress: session.ipAddress,
+      createdAt: session.createdAt,
+      lastActiveAt: session.lastUsedAt,
+      expiresAt: session.expiresAt,
+      current: session.id === user.sessionId,
+    }));
+  }
+
+  /** Signs one of the user's own devices out. */
+  async revokeSession(user: AuthUser, sessionId: string): Promise<void> {
+    const { count } = await this.prisma.session.updateMany({
+      // userId in the filter: users can only revoke their OWN sessions.
+      where: {
+        id: sessionId,
+        userId: user.id,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { revokedAt: new Date() },
+    });
+
+    if (count === 0) {
+      throw new NotFoundException('Session not found');
+    }
   }
 
   verifyEmail(token: string): Promise<void> {

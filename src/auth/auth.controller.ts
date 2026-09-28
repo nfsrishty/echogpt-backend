@@ -1,8 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
   Post,
   Req,
 } from '@nestjs/common';
@@ -11,6 +15,7 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -31,6 +36,7 @@ import { AuthResponseDto, TokensResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RegisterDto } from './dto/register.dto';
+import { SessionResponseDto } from './dto/session-response.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 
 /** Stricter limit on credential endpoints to slow down brute-force attempts. */
@@ -144,6 +150,38 @@ export class AuthController {
     const count = await this.authService.logoutAll(user);
 
     return { message: `Logged out of ${count} session(s)` };
+  }
+
+  @Get('sessions')
+  @ApiAuth()
+  @ApiOperation({
+    summary: 'List my active sessions (logged-in devices)',
+    description:
+      'Each login opens a session. `current` marks the device making this request.',
+  })
+  @ApiOkResponse({ type: SessionResponseDto, isArray: true })
+  listSessions(@CurrentUser() user: AuthUser): Promise<SessionResponseDto[]> {
+    return this.authService.listSessions(user);
+  }
+
+  @Delete('sessions/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiAuth()
+  @ApiOperation({
+    summary: 'Sign out one of my devices',
+    description:
+      'Revokes that session immediately. Revoking the current session is the same as logging out.',
+  })
+  @ApiNoContentResponse({ description: 'Session revoked' })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: 'No such active session of yours',
+  })
+  async revokeSession(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    await this.authService.revokeSession(user, id);
   }
 
   @Public()

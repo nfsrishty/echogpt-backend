@@ -4,7 +4,7 @@ import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
 import { StrongPassword } from '../../common/decorators/strong-password.decorator';
 
 export class RegisterDto {
-  @ApiProperty({ example: 'sonny@example.com', maxLength: 254 })
+  @ApiProperty({ example: 'jane@example.com', maxLength: 254 })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
@@ -21,7 +21,7 @@ export class RegisterDto {
   @StrongPassword()
   password: string;
 
-  @ApiProperty({ example: 'Sonny Rahman', minLength: 2, maxLength: 100 })
+  @ApiProperty({ example: 'Jane Doe', minLength: 2, maxLength: 100 })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )

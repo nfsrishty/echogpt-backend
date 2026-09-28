@@ -21,7 +21,7 @@ const trim = ({ value }: { value: unknown }) =>
 export class AdminUserListQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
     description: 'Matches email or full name (case-insensitive)',
-    example: 'sonny',
+    example: 'jane',
   })
   @IsOptional()
   @Transform(trim)

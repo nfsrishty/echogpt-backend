@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
@@ -42,6 +43,19 @@ export class UsersController {
 
   @Patch('me')
   @ApiOperation({ summary: 'Update my profile' })
+  @ApiBody({
+    type: UpdateProfileDto,
+    examples: {
+      changeName: {
+        summary: 'Change name',
+        value: { fullName: 'Jane Doe' },
+      },
+      changeAvatar: {
+        summary: 'Change avatar',
+        value: { avatarUrl: 'https://example.com/avatar.png' },
+      },
+    },
+  })
   @ApiOkResponse({ type: UserProfileResponseDto })
   @ApiBadRequestResponse({
     type: ErrorResponseDto,

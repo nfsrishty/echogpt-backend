@@ -1,4 +1,6 @@
 import {
+  BadGatewayException,
+  BadRequestException,
   HttpException,
   Injectable,
   Logger,
@@ -26,9 +28,16 @@ import {
   ConversationListResponseDto,
   ConversationSummaryDto,
   ProviderRefDto,
+  CompareResponseDto,
+  CompareResultDto,
   SendMessageResponseDto,
 } from './dto/chat-response.dto';
-import { SendMessageDto } from './dto/send-message.dto';
+import { CompareMessageDto, SendMessageDto } from './dto/send-message.dto';
+import {
+  buildSystemPrompt,
+  ChatAction,
+  defaultMessageFor,
+} from './prompt-builder';
 
 /** How many previous messages are sent to the model as context. */
 const HISTORY_LIMIT = 20;
@@ -41,6 +50,8 @@ interface PreparedChat {
   adapter: AiProviderAdapter;
   model: string;
   messages: ChatMessage[];
+  /** What is stored as the user's message (never the page content). */
+  userText: string;
   userMessageAt: Date;
 }
 
@@ -84,7 +95,7 @@ export class ChatService {
     const saved = await this.persist(
       userId,
       chat,
-      dto.message,
+      chat.userText,
       result.content,
       result,
     );
@@ -196,7 +207,7 @@ export class ChatService {
       const saved = await this.persist(
         userId,
         chat,
-        dto.message,
+        chat.userText,
         content,
         usage,
       );
@@ -210,7 +221,7 @@ export class ChatService {
       if (abort.signal.aborted) {
         // Keep whatever was generated before the user left.
         if (content) {
-          await this.persist(userId, chat, dto.message, content, usage);
+          await this.persist(userId, chat, chat.userText, content, usage);
           this.attachUsage(request, chat.provider, usage);
         }
       } else {
@@ -223,6 +234,82 @@ export class ChatService {
     } finally {
       response.end();
     }
+  }
+
+  // ---------- compare ----------
+
+  /**
+   * Sends one prompt to 2-3 providers in parallel and returns every answer
+   * side by side. One provider failing does not fail the others. Comparisons
+   * are not saved as conversations.
+   */
+  async compare(
+    dto: CompareMessageDto,
+    request: AuthenticatedRequest,
+  ): Promise<CompareResponseDto> {
+    // Resolve all first: a disabled/unknown provider is a 400 before any AI call.
+    const resolved = await Promise.all(
+      dto.providerIds.map((id) => this.providersService.resolveForChat(id)),
+    );
+
+    const messages: ChatMessage[] = [
+      ...(dto.systemPrompt
+        ? [{ role: 'system' as const, content: dto.systemPrompt }]
+        : []),
+      { role: 'user', content: dto.message },
+    ];
+
+    const results = await Promise.all(
+      resolved.map(async ({ provider, adapter }): Promise<CompareResultDto> => {
+        const startedAt = Date.now();
+        const base = {
+          provider: this.toProviderRef(provider),
+          model: provider.defaultModel,
+        };
+
+        try {
+          const result = await adapter.chat({
+            model: provider.defaultModel,
+            messages,
+          });
+          return {
+            ...base,
+            content: result.content,
+            promptTokens: result.promptTokens ?? null,
+            completionTokens: result.completionTokens ?? null,
+            latencyMs: Date.now() - startedAt,
+            error: null,
+          };
+        } catch (error) {
+          this.logger.warn(
+            `Compare: provider "${provider.name}" failed: ${(error as Error).message}`,
+          );
+          return {
+            ...base,
+            content: null,
+            promptTokens: null,
+            completionTokens: null,
+            latencyMs: Date.now() - startedAt,
+            error: toProviderHttpException(error).message,
+          };
+        }
+      }),
+    );
+
+    if (results.every((result) => result.error)) {
+      throw new BadGatewayException(
+        'None of the selected providers could answer. Try again later.',
+      );
+    }
+
+    const sum = (pick: (r: CompareResultDto) => number | null) =>
+      results.reduce((total, r) => total + (pick(r) ?? 0), 0);
+    request.usage = {
+      promptTokens: sum((r) => r.promptTokens),
+      completionTokens: sum((r) => r.completionTokens),
+    };
+
+    return { message: dto.message, results };
   }
 
   // ---------- conversations ----------
@@ -299,6 +386,7 @@ export class ChatService {
     dto: SendMessageDto,
   ): Promise<PreparedChat> {
     const userMessageAt = new Date();
+    const userText = this.resolveUserText(dto);
     let history: Message[] = [];
     let preferredProviderId: string | null = null;
 
@@ -331,9 +419,15 @@ export class ChatService {
       history.shift();
     }
 
+    const systemPrompt = buildSystemPrompt(
+      dto.action,
+      dto.pageContext,
+      dto.systemPrompt,
+    );
+
     const messages: ChatMessage[] = [
-      ...(dto.systemPrompt
-        ? [{ role: 'system' as const, content: dto.systemPrompt }]
+      ...(systemPrompt
+        ? [{ role: 'system' as const, content: systemPrompt }]
         : []),
       ...history
         .filter((m) => m.role !== MessageRole.SYSTEM)
@@ -344,7 +438,7 @@ export class ChatService {
               : ('assistant' as const),
           content: m.content,
         })),
-      { role: 'user', content: dto.message },
+      { role: 'user', content: userText },
     ];
 
     return {
@@ -354,8 +448,32 @@ export class ChatService {
       adapter,
       model: dto.model ?? provider.defaultModel,
       messages,
+      userText,
       userMessageAt,
     };
+  }
+
+  /** Checks that a page action got the page data it needs. */
+  private resolveUserText(dto: SendMessageDto): string {
+    if (
+      dto.action === ChatAction.SUMMARIZE_PAGE &&
+      !dto.pageContext?.content?.trim()
+    ) {
+      throw new BadRequestException(
+        'SUMMARIZE_PAGE requires pageContext.content',
+      );
+    }
+    if (
+      dto.action === ChatAction.EXPLAIN_SELECTION &&
+      !dto.pageContext?.selection?.trim()
+    ) {
+      throw new BadRequestException(
+        'EXPLAIN_SELECTION requires pageContext.selection',
+      );
+    }
+
+    // Validation guarantees one of the two exists.
+    return dto.message ?? defaultMessageFor(dto.action)!;
   }
 
   /**

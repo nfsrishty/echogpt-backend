@@ -1,0 +1,2794 @@
+{
+  "item": [
+    {
+      "id": "82ac69ea-93b0-4099-9c99-cd3fa2662884",
+      "name": "Auth",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "677afac1-c623-4ec7-ad79-dc1d59d8b1f6",
+          "name": "Register a new account",
+          "request": {
+            "name": "Register a new account",
+            "description": {
+              "content": "Creates a USER-role account on the Free plan, sends an email verification token, and returns a token pair.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/auth/register"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.com\",\n  \"password\": \"StrongPass123\",\n  \"fullName\": \"Jane Doe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                  "  console.log('Saved accessToken and refreshToken');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "cb26cd2b-8ae3-4870-b715-aac998c41a79",
+          "name": "Log in",
+          "request": {
+            "name": "Log in",
+            "description": {
+              "content": "Opens a new session for this device and returns a token pair.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/auth/login"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@echogpt.local\",\n  \"password\": \"ChangeMe123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                  "  console.log('Saved accessToken and refreshToken');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "0b1ed9e9-4b84-4fb5-98c4-6d3d9a9a9fbf",
+          "name": "Refresh the token pair",
+          "request": {
+            "name": "Refresh the token pair",
+            "description": {
+              "content": "Exchanges a refresh token for a new access + refresh token. Each refresh token is single-use; presenting an already-used one revokes the session.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/auth/refresh"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', body.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.refreshToken);",
+                  "  console.log('Saved accessToken and refreshToken');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "dcc00656-ec49-4f0f-925d-57b9624f58bf",
+          "name": "Log out of the current device",
+          "request": {
+            "name": "Log out of the current device",
+            "description": {
+              "content": "Revokes the current session. Its access and refresh tokens stop working immediately.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/auth/logout"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "7fad660d-d005-44f7-b42e-2845f36e4d4c",
+          "name": "Log out of all devices",
+          "request": {
+            "name": "Log out of all devices",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout-all"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/auth/logout-all"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "de7ee9c0-e555-4f15-a40c-767175ab7496",
+          "name": "List my active sessions (logged-in devices)",
+          "request": {
+            "name": "List my active sessions (logged-in devices)",
+            "description": {
+              "content": "Each login opens a session. `current` marks the device making this request.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "sessions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/auth/sessions"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "6d92bb79-9f80-4bd1-a9e9-548be4369c24",
+          "name": "Sign out one of my devices",
+          "request": {
+            "name": "Sign out one of my devices",
+            "description": {
+              "content": "Revokes that session immediately. Revoking the current session is the same as logging out.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "sessions",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "string",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/auth/sessions/:id"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "4224727e-536c-42f1-b03c-f43c6d83bb17",
+          "name": "Verify an email address with the emailed token",
+          "request": {
+            "name": "Verify an email address with the emailed token",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-email"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/auth/verify-email"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "a9a70210-537d-4065-ab59-8be6814676b9",
+          "name": "Resend the email verification token",
+          "request": {
+            "name": "Resend the email verification token",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "resend-verification"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/auth/resend-verification"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "66e3b3f9-425c-4252-abb1-d7f81519690b",
+      "name": "Users",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "a045474a-dd40-4afc-8123-3e2b6794d36f",
+          "name": "Get my profile",
+          "request": {
+            "name": "Get my profile",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/users/me"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "271782a1-af9a-4e1d-a02a-b41a847cba3d",
+          "name": "Update my profile",
+          "request": {
+            "name": "Update my profile",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/users/me"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Jane Doe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "8a9807db-254f-4f88-94b6-0432fe3a2918",
+          "name": "Delete my account",
+          "request": {
+            "name": "Delete my account",
+            "description": {
+              "content": "Permanently deletes the account and all its data. Requires the current password.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/users/me"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"StrongPass123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "61b8209f-29f9-4d94-917a-d245a3060e29",
+          "name": "Change my password",
+          "request": {
+            "name": "Change my password",
+            "description": {
+              "content": "Also logs out all other devices. The current session stays active.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "password"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/users/me/password"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"StrongPass123\",\n  \"newPassword\": \"EvenStronger456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "a2955b82-5cec-4264-a1c4-85a092cedb5a",
+      "name": "Subscriptions",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "ca986b49-d7af-4094-a1f0-4f0fea730316",
+          "name": "List available plans",
+          "request": {
+            "name": "List available plans",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "subscriptions",
+                "plans"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/subscriptions/plans"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "7c597587-78a2-4d4d-898f-f620a37a96b7",
+          "name": "Get my subscription status",
+          "request": {
+            "name": "Get my subscription status",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "subscriptions",
+                "me"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/subscriptions/me"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "4b1bd131-c567-4aca-bee4-bbc846f46a09",
+          "name": "Upgrade or downgrade my plan",
+          "request": {
+            "name": "Upgrade or downgrade my plan",
+            "description": {
+              "content": "Switches between FREE and PREMIUM. Upgrading starts a 30-day Premium period (payment is out of scope for this assignment).",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "subscriptions",
+                "me"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/subscriptions/me"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tier\": \"PREMIUM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "628f90ae-c837-434a-9e0f-1ee56d3f23c4",
+          "name": "Get my usage and remaining requests for today",
+          "request": {
+            "name": "Get my usage and remaining requests for today",
+            "description": {
+              "content": "Counts successful AI chat and web search requests since 00:00 UTC.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "subscriptions",
+                "me",
+                "usage"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/subscriptions/me/usage"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "0cb49cd8-7e1e-4b7f-a8b1-34388c1e2c42",
+      "name": "AI Providers",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "7def162a-d92e-4c5c-93a5-d243e95f8967",
+          "name": "List enabled providers (for the model picker)",
+          "request": {
+            "name": "List enabled providers (for the model picker)",
+            "description": {
+              "content": "Available to every authenticated user. Contains no secrets.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "providers",
+                "available"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/providers/available"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const value = body[0] && body[0].id;",
+                  "if (value) { pm.collectionVariables.set('providerId', value); console.log('Saved providerId: ' + value); }"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "f2cc05e9-587e-43ac-b104-de1cce1ba8d9",
+          "name": "[Admin] Health-check every enabled provider",
+          "request": {
+            "name": "[Admin] Health-check every enabled provider",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "providers",
+                "health"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/providers/health"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "47929b46-7cd7-43d2-8b80-b050ee4e6221",
+          "name": "[Admin] List all providers",
+          "request": {
+            "name": "[Admin] List all providers",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "providers"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/providers"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "e03e0f79-f558-4578-b8a0-5c1184c69fd9",
+          "name": "[Admin] Add a provider",
+          "request": {
+            "name": "[Admin] Add a provider",
+            "description": {
+              "content": "The API key is encrypted with AES-256-GCM before storage.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "providers"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/providers"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"GPT-4o\",\n  \"type\": \"OPENAI\",\n  \"defaultModel\": \"gpt-4o\",\n  \"apiKey\": \"sk-proj-your-openai-key\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const value = body.id;",
+                  "if (value) { pm.collectionVariables.set('providerId', value); console.log('Saved providerId: ' + value); }"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "ce84b3a5-6e0b-4e36-94e3-1213ac301c50",
+          "name": "[Admin] Get a provider",
+          "request": {
+            "name": "[Admin] Get a provider",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "providers",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{providerId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/providers/:id"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "428f2fec-3bb8-4298-a076-7b303925a9a6",
+          "name": "[Admin] Edit a provider",
+          "request": {
+            "name": "[Admin] Edit a provider",
+            "description": {
+              "content": "Send apiKey only to rotate it. Resets health status to UNKNOWN.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "providers",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{providerId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/providers/:id"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiKey\": \"new-api-key-value\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "a462e14a-d16d-4ab2-bcf1-b94e01f4b264",
+          "name": "[Admin] Delete a provider",
+          "request": {
+            "name": "[Admin] Delete a provider",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "providers",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{providerId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/providers/:id"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "cb607228-4d4d-4174-9bd1-eda7ee83c346",
+          "name": "[Admin] Enable or disable a provider",
+          "request": {
+            "name": "[Admin] Enable or disable a provider",
+            "description": {
+              "content": "Disabling the default provider also clears its default flag.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "providers",
+                ":id",
+                "status"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{providerId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/providers/:id/status"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isEnabled\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "a43da2a0-33e2-4a8c-b355-74c51049a60b",
+          "name": "[Admin] Make this the default provider",
+          "request": {
+            "name": "[Admin] Make this the default provider",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "providers",
+                ":id",
+                "default"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{providerId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/providers/:id/default"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "29b5dfdf-aa50-4588-af2d-e6ad31e0fd7f",
+          "name": "[Admin] Health-check one provider",
+          "request": {
+            "name": "[Admin] Health-check one provider",
+            "description": {
+              "content": "Sends a tiny prompt to the configured model, which validates the API key, the model name and current availability, then stores the result.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "providers",
+                ":id",
+                "health-check"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{providerId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/providers/:id/health-check"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "e418ee2f-91c7-41b8-a0b3-e4d79afebce3",
+      "name": "Chat",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "0ab13663-512f-4461-b02a-b47a92c8198f",
+          "name": "Send a prompt and receive the AI response",
+          "request": {
+            "name": "Send a prompt and receive the AI response",
+            "description": {
+              "content": "Starts a new conversation or continues one (conversationId). Uses 1 request from the daily quota when it succeeds.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "messages"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/chat/messages"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Explain quantum computing in simple terms\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const value = body.conversationId;",
+                  "if (value) { pm.collectionVariables.set('conversationId', value); console.log('Saved conversationId: ' + value); }"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "5905778b-1e5b-4180-9924-59a865625e4c",
+          "name": "Send a prompt and stream the response (Server-Sent Events)",
+          "request": {
+            "name": "Send a prompt and stream the response (Server-Sent Events)",
+            "description": {
+              "content": "Same body as POST /chat/messages. Responds with `text/event-stream`:\n\n- `event: meta` → `{ conversationId, provider, model }`\n- `event: delta` → `{ text }` (repeated, one per chunk)\n- `event: done` → `{ messageId, conversationId, usage }`\n- `event: error` → `{ message }` (provider failed mid-stream)\n\nErrors before the stream starts (validation, quota, provider down) are normal JSON errors.\nSwagger UI cannot display streams live; use curl or fetch() with a ReadableStream.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "messages",
+                "stream"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/chat/messages/stream"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Explain quantum computing in simple terms\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "32e351c1-6a8e-4451-9be0-eb16f49e2510",
+          "name": "Compare answers from 2-3 AI models side by side",
+          "request": {
+            "name": "Compare answers from 2-3 AI models side by side",
+            "description": {
+              "content": "Sends the same prompt to each provider in parallel. If one fails, the others are still returned, with `error` set on the failed one; only if all fail is a 502 returned. Counts as 1 request toward the daily quota. Comparisons are not saved as conversations.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "compare"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/chat/compare"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"What is the capital of Australia? One sentence.\",\n  \"providerIds\": [\n    \"fe702824-fd0c-fdf2-2702-9fd44b1cf342\",\n    \"a3576c23-2208-79d9-6ee0-c53083d1ac01\"\n  ],\n  \"systemPrompt\": \"Answer in one sentence.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "2802a588-b684-44ac-9feb-db73c3f3e32f",
+          "name": "List my conversations (newest activity first)",
+          "request": {
+            "name": "List my conversations (newest activity first)",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "conversations"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": true,
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "disabled": true,
+                  "key": "limit",
+                  "value": "20"
+                }
+              ],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/chat/conversations"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const value = body.items && body.items[0] && body.items[0].id;",
+                  "if (value) { pm.collectionVariables.set('conversationId', value); console.log('Saved conversationId: ' + value); }"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "f1a30f7d-b6f4-468c-b690-99cf5cdfc046",
+          "name": "Get a conversation with its full message history",
+          "request": {
+            "name": "Get a conversation with its full message history",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "conversations",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{conversationId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/chat/conversations/:id"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "b032b7eb-2d4c-488a-ad6e-793763be3ecc",
+          "name": "Rename a conversation",
+          "request": {
+            "name": "Rename a conversation",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "conversations",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{conversationId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/chat/conversations/:id"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Quantum computing basics\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "8c5b595e-ac3c-4561-ab2f-c49c41ab5f2c",
+          "name": "Delete a conversation and its messages",
+          "request": {
+            "name": "Delete a conversation and its messages",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "conversations",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{conversationId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/chat/conversations/:id"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "7578f4e0-1291-4586-825f-ea07c2c4333b",
+      "name": "Web Search",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "9cd33cf2-4956-43ed-81e4-c37cd55d68f5",
+          "name": "Search the web, with an optional AI answer citing the results",
+          "request": {
+            "name": "Search the web, with an optional AI answer citing the results",
+            "description": {
+              "content": "Identical searches are served from a cache for SEARCH_CACHE_TTL_SECONDS. Uses 1 request from the daily quota. If the AI summary fails, results are still returned with summaryError set.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "search"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/search"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"latest developments in solid-state batteries\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "39997a7e-676e-4827-91c0-c58e105470a1",
+          "name": "My search history (newest first)",
+          "request": {
+            "name": "My search history (newest first)",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "search",
+                "history"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": true,
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "disabled": true,
+                  "key": "limit",
+                  "value": "20"
+                }
+              ],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/search/history"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "f0491aab-736c-4baa-be53-bd4d5496f5b4",
+          "name": "Clear my whole search history",
+          "request": {
+            "name": "Clear my whole search history",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "search",
+                "history"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/search/history"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "76847219-cfb6-4c48-ac86-6e777569b75d",
+          "name": "My recent distinct searches",
+          "request": {
+            "name": "My recent distinct searches",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "search",
+                "recent"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": true,
+                  "key": "limit",
+                  "value": "10"
+                }
+              ],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/search/recent"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "d3ccac4e-02b4-4215-8797-90d8c4fbda79",
+          "name": "Autocomplete suggestions for a partial query",
+          "request": {
+            "name": "Autocomplete suggestions for a partial query",
+            "description": {
+              "content": "Your own past searches first, then queries searched by at least 3 different users in the last 30 days (so nobody's private searches are exposed).",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "search",
+                "suggestions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": true,
+                  "key": "q",
+                  "value": "sol",
+                  "description": "(Required) What the user has typed so far"
+                }
+              ],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/search/suggestions"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "29b06a6a-bc0b-48fd-a76a-cc362c2cf4c7",
+          "name": "Delete one entry from my search history",
+          "request": {
+            "name": "Delete one entry from my search history",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "search",
+                "history",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{searchId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/search/history/:id"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "4cf4837a-792f-4a89-9ce3-679b62e7c29a",
+      "name": "Admin · Dashboard & Analytics",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "62df1516-6e00-423c-9afc-8b39dcdd90e6",
+          "name": "Dashboard statistics: users, plans, activity, providers",
+          "request": {
+            "name": "Dashboard statistics: users, plans, activity, providers",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "dashboard"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/admin/dashboard"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "f27ac313-3ad1-4a33-8825-2a9e27703637",
+          "name": "API usage analytics over the last N days",
+          "request": {
+            "name": "API usage analytics over the last N days",
+            "description": {
+              "content": "Daily series (zero-filled), totals, usage per AI provider, top endpoints (IDs grouped as :id) and top users.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "analytics",
+                "usage"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": true,
+                  "key": "days",
+                  "value": "7",
+                  "description": "Days to include, ending today (UTC)"
+                }
+              ],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/admin/analytics/usage"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "bdbeae7a-d497-4582-a54d-1362d87d61f7",
+          "name": "Request logs (newest first)",
+          "request": {
+            "name": "Request logs (newest first)",
+            "description": {
+              "content": "Every API request is logged, including rejected ones (401, 403, 429). Filter with the query parameters.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "logs"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": true,
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "disabled": true,
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "disabled": true,
+                  "key": "userId",
+                  "value": "f5f9cf64-22bd-4553-52e1-1126ff740f42"
+                },
+                {
+                  "disabled": true,
+                  "key": "method",
+                  "value": "GET"
+                },
+                {
+                  "disabled": true,
+                  "key": "statusCode",
+                  "value": "429",
+                  "description": "Exact status code"
+                },
+                {
+                  "disabled": true,
+                  "key": "minStatus",
+                  "value": "400",
+                  "description": "Only responses with status >= this (e.g. 400 = all errors)"
+                },
+                {
+                  "disabled": true,
+                  "key": "path",
+                  "value": "/chat",
+                  "description": "Path contains this text"
+                },
+                {
+                  "disabled": true,
+                  "key": "from",
+                  "value": "2026-09-27T00:00:00Z"
+                },
+                {
+                  "disabled": true,
+                  "key": "to",
+                  "value": "2026-09-28T00:00:00Z"
+                }
+              ],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/admin/logs"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "138157bf-67dc-40ec-9b50-a961b4bdeb40",
+      "name": "Admin · Users",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "d731f6a5-3553-4c3b-84e6-bb520a5aeba1",
+          "name": "List and search users",
+          "request": {
+            "name": "List and search users",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": true,
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "disabled": true,
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "disabled": true,
+                  "key": "search",
+                  "value": "jane",
+                  "description": "Matches email or full name (case-insensitive)"
+                },
+                {
+                  "disabled": true,
+                  "key": "role",
+                  "value": "ADMIN"
+                },
+                {
+                  "disabled": true,
+                  "key": "tier",
+                  "value": "FREE"
+                }
+              ],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/admin/users"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const value = body.items && body.items[0] && body.items[0].id;",
+                  "if (value) { pm.collectionVariables.set('userId', value); console.log('Saved userId: ' + value); }"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "9d97f04a-7c87-425f-85c3-aa5f4e848741",
+          "name": "User details, subscription, today's usage and activity stats",
+          "request": {
+            "name": "User details, subscription, today's usage and activity stats",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{userId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/admin/users/:id"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "24833f40-8e94-48ed-b8b5-1abe7a78e6a9",
+          "name": "Delete a user and all their data",
+          "request": {
+            "name": "Delete a user and all their data",
+            "description": {
+              "content": "Usage logs are kept, anonymized. You cannot delete yourself here, or the last admin.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{userId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/admin/users/:id"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "99c536b8-9761-43a5-90a9-317c475623e4",
+          "name": "Change a user's role",
+          "request": {
+            "name": "Change a user's role",
+            "description": {
+              "content": "Applies on the user's next request. You cannot change your own role or demote the last admin.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                ":id",
+                "role"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{userId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/admin/users/:id/role"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"ADMIN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "3a9ad981-5e5b-49c4-b87e-39d133f762e5",
+          "name": "Grant, extend or remove a user's plan",
+          "request": {
+            "name": "Grant, extend or remove a user's plan",
+            "description": {
+              "content": "Setting the same paid tier again restarts the period (e.g. extending a trial).",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                ":id",
+                "subscription"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{userId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/admin/users/:id/subscription"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tier\": \"PREMIUM\",\n  \"periodDays\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "85e4b0bd-c2f9-4f68-897e-ad42b5815b10",
+          "name": "Force-logout a user from every device",
+          "request": {
+            "name": "Force-logout a user from every device",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                ":id",
+                "revoke-sessions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "{{userId}}",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/admin/users/:id/revoke-sessions"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "e4e4cdfb-1155-4066-abba-6e7f3f3361f3",
+      "name": "Admin · Subscriptions",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "aa212656-8a8e-47e7-b587-ff626dddc36e",
+          "name": "List subscriptions (filter by tier/status)",
+          "request": {
+            "name": "List subscriptions (filter by tier/status)",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "subscriptions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": true,
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "disabled": true,
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "disabled": true,
+                  "key": "tier",
+                  "value": "FREE"
+                },
+                {
+                  "disabled": true,
+                  "key": "status",
+                  "value": "EXPIRED"
+                }
+              ],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/admin/subscriptions"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "f0b6301b-8b1e-4521-af25-3146e68ecf17",
+          "name": "List all plans, including inactive ones",
+          "request": {
+            "name": "List all plans, including inactive ones",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "plans"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/admin/plans"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "22683968-b04f-449f-a6ce-2836e215a8da",
+          "name": "Edit a plan (limit, price, name, active)",
+          "request": {
+            "name": "Edit a plan (limit, price, name, active)",
+            "description": {
+              "content": "A new daily limit applies to every subscriber immediately. FREE cannot be deactivated.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "plans",
+                ":tier"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "PREMIUM",
+                  "key": "tier",
+                  "description": "(Required) "
+                }
+              ],
+              "raw": "{{baseUrl}}/api/v1/admin/plans/:tier"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dailyRequestLimit\": 1000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "7bc8fca8-a02e-418a-8008-46212ae15115",
+      "name": "Admin · System",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "9f62ec35-5cd4-4849-82a3-31b3113afae5",
+          "name": "Detailed system health",
+          "request": {
+            "name": "Detailed system health",
+            "description": {
+              "content": "Database latency, memory, uptime, version and the stored health of AI providers. For live provider checks use GET /providers/health.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "system",
+                "health"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/admin/system/health"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "1688f346-839e-49c2-bf9c-f64f1f22dd5d",
+          "name": "Delete expired sessions, verification tokens and cache entries",
+          "request": {
+            "name": "Delete expired sessions, verification tokens and cache entries",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "system",
+                "cleanup"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/admin/system/cleanup"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST"
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "c13eab84-e0e9-4be9-b761-2afdb62e2f7b",
+      "name": "Health",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "499b2813-e3e5-498d-8ab4-be5edd872342",
+          "name": "Public health probe (API + database)",
+          "request": {
+            "name": "Public health probe (API + database)",
+            "description": {},
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [],
+              "raw": "{{baseUrl}}/api/v1/health"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "conversationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "searchId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "info": {
+    "_postman_id": "40728d0a-c099-4a21-b5a6-05c4273496c2",
+    "name": "EchoGPT Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Generated from the OpenAPI document (GET /docs/json).\n\n1. Run **Auth → Log in** (seeded admin). The access & refresh tokens are saved automatically.\n2. Every other request uses {{accessToken}} via collection-level Bearer auth.\nIDs (conversationId, providerId, userId) are saved automatically by the requests that return them."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
+}

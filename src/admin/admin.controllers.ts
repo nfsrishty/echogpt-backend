@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -160,6 +161,16 @@ export class AdminUsersController {
   }
 
   @Patch(':id/subscription')
+  @ApiBody({
+    type: SetUserPlanDto,
+    examples: {
+      grantPremium: {
+        summary: 'Grant Premium for 30 days',
+        value: { tier: 'PREMIUM', periodDays: 30 },
+      },
+      downgrade: { summary: 'Move to Free', value: { tier: 'FREE' } },
+    },
+  })
   @ApiOperation({
     summary: "Grant, extend or remove a user's plan",
     description:
@@ -237,6 +248,23 @@ export class AdminSubscriptionsController {
 
   @Patch('plans/:tier')
   @ApiParam({ name: 'tier', enum: PlanTier })
+  @ApiBody({
+    type: UpdatePlanDto,
+    examples: {
+      raiseLimit: {
+        summary: 'Change the daily request limit',
+        value: { dailyRequestLimit: 1000 },
+      },
+      changePrice: {
+        summary: 'Change the monthly price (cents)',
+        value: { priceCents: 1499 },
+      },
+      deactivate: {
+        summary: 'Stop offering the plan (not allowed for FREE)',
+        value: { isActive: false },
+      },
+    },
+  })
   @ApiOperation({
     summary: 'Edit a plan (limit, price, name, active)',
     description:

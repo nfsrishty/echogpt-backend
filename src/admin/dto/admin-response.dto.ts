@@ -62,8 +62,8 @@ export class DashboardResponseDto {
 
 export class AdminUserDto {
   @ApiProperty({ format: 'uuid' }) id: string;
-  @ApiProperty({ example: 'sonny@example.com' }) email: string;
-  @ApiProperty({ example: 'Sonny Rahman' }) fullName: string;
+  @ApiProperty({ example: 'jane@example.com' }) email: string;
+  @ApiProperty({ example: 'Jane Doe' }) fullName: string;
   @ApiProperty({ enum: RoleName, example: RoleName.USER }) role: RoleName;
   @ApiProperty({ example: true }) isEmailVerified: boolean;
   @ApiProperty({ enum: PlanTier, nullable: true, example: PlanTier.FREE })
@@ -105,8 +105,8 @@ export class AdminUserDetailDto extends AdminUserDto {
 
 export class AdminSubscriptionDto {
   @ApiProperty({ format: 'uuid' }) userId: string;
-  @ApiProperty({ example: 'sonny@example.com' }) email: string;
-  @ApiProperty({ example: 'Sonny Rahman' }) fullName: string;
+  @ApiProperty({ example: 'jane@example.com' }) email: string;
+  @ApiProperty({ example: 'Jane Doe' }) fullName: string;
   @ApiProperty({ enum: PlanTier }) tier: PlanTier;
   @ApiProperty({ enum: SubscriptionStatus }) status: SubscriptionStatus;
   @ApiProperty() startedAt: Date;
@@ -212,7 +212,7 @@ export class RequestLogDto {
   @ApiProperty({ example: 912 }) durationMs: number;
   @ApiProperty({ type: String, nullable: true, format: 'uuid' }) userId:
     string | null;
-  @ApiProperty({ type: String, nullable: true, example: 'sonny@example.com' })
+  @ApiProperty({ type: String, nullable: true, example: 'jane@example.com' })
   userEmail: string | null;
   @ApiProperty({ type: String, nullable: true, format: 'uuid' }) providerId:
     string | null;

@@ -21,6 +21,12 @@ export type AuthenticatedRequest = Request & {
   usage?: UsageContext;
   /** Set by QuotaGuard on @ConsumesQuota() routes. */
   consumesQuota?: boolean;
+  /**
+   * Resolves when the handler has finished its own work. The usage logger
+   * waits on it, because after a client disconnect the handler may still be
+   * saving a partial answer and attaching token usage.
+   */
+  handlerSettled?: Promise<void>;
 };
 
 /** Claims inside the short-lived access token. */
