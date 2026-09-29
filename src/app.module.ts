@@ -7,6 +7,10 @@ import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { CryptoModule } from './common/crypto/crypto.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import {
+  RateLimitModule,
+  RateLimitStorage,
+} from './common/rate-limit/rate-limit.storage';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { ApiUsageMiddleware } from './common/middleware/api-usage.middleware';
@@ -28,7 +32,15 @@ import { UsersModule } from './users/users.module';
       validationOptions: { abortEarly: false },
     }),
     // Default: 100 requests per minute per IP. Auth routes override this.
-    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 100 }]),
+    // Counters live in Redis when REDIS_URL is set (shared by all instances).
+    RateLimitModule,
+    ThrottlerModule.forRootAsync({
+      inject: [RateLimitStorage],
+      useFactory: (storage: RateLimitStorage) => ({
+        throttlers: [{ name: 'default', ttl: 60_000, limit: 100 }],
+        storage,
+      }),
+    }),
     PrismaModule,
     CryptoModule,
     AuthModule,

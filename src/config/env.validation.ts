@@ -26,6 +26,13 @@ export const envValidationSchema = Joi.object({
   // Comma-separated list, e.g. "chrome-extension://abc,http://localhost:5173"
   CORS_ORIGINS: Joi.string().default('*'),
 
+  // Rate-limit counter store. Empty = in-process memory (single instance).
+  // Set it (e.g. redis://localhost:6380) to share limits across instances.
+  REDIS_URL: Joi.string()
+    .uri({ scheme: ['redis', 'rediss'] })
+    .allow('')
+    .optional(),
+
   // Web search (Tavily). Without a key, Tavily's keyless mode is used
   // (lower limits). A free key gives 1,000 searches/month.
   TAVILY_API_KEY: Joi.string().allow('').optional(),
