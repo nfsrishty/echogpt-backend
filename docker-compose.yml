@@ -18,6 +18,21 @@ services:
       timeout: 5s
       retries: 10
 
+  # Shared rate-limit counters for all API instances. Counters are short-lived
+  # (60 s windows), so no persistence is needed.
+  redis:
+    image: redis:7-alpine
+    container_name: echogpt-redis
+    restart: unless-stopped
+    ports:
+      # Host port 6380 avoids clashing with a locally installed Redis on 6379
+      - '6380:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   # The API itself. Behind the "app" profile, so `docker compose up -d` still
   # starts only the database for local development (npm run start:dev).
   # Run everything with:  docker compose --profile app up --build
@@ -29,10 +44,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file: .env
     environment:
       # Inside the Docker network the database is "postgres:5432", not localhost:5433.
       DATABASE_URL: postgresql://echogpt:echogpt@postgres:5432/echogpt?schema=public
+      REDIS_URL: redis://redis:6379
       NODE_ENV: production
       PORT: 3000
     ports:
