@@ -11,12 +11,14 @@ Built with **NestJS 11, PostgreSQL 16, Prisma 6 and Swagger (OpenAPI 3)**.
 ## Contents
 
 - [Features](#features)
+- [Evaluation criteria](#evaluation-criteria)
 - [Quick start](#quick-start)
 - [Configuration](#configuration)
 - [Using the API](#using-the-api)
 - [Architecture](#architecture)
 - [Database schema](#database-schema)
 - [Design decisions](#design-decisions)
+- [Scalability](#scalability)
 - [API reference](#api-reference)
 - [Testing](#testing)
 - [Project structure](#project-structure)
@@ -36,6 +38,25 @@ Built with **NestJS 11, PostgreSQL 16, Prisma 6 and Swagger (OpenAPI 3)**.
 | **Web search** | AI-assisted search (results + cited AI answer), search history, recent searches, autocomplete suggestions, **result caching** (bonus) |
 | **Admin panel** | Dashboard statistics, user management, subscription and plan management, provider management, usage analytics, request logs, system health, cleanup job |
 | **Docs & tooling** | Swagger for every endpoint (bodies, parameters, per-status error examples, auth), Postman collection, Docker, migrations, seed, unit + e2e tests |
+
+---
+
+## Evaluation criteria
+
+Where each assessment criterion is addressed in the code:
+
+| Criterion | How it is addressed | Where to look |
+|---|---|---|
+| **Backend architecture** | Feature modules on a shared `common/` layer; controllers handle HTTP, services hold logic, Prisma is the only data access. AI vendors hidden behind one adapter interface. | [`app.module.ts`](src/app.module.ts), [`ai-provider.adapter.ts`](src/providers/adapters/ai-provider.adapter.ts), [Architecture](#architecture) |
+| **REST API design** | 55 endpoints under versioned `/api/v1`, resource-oriented paths, correct verbs and status codes (201, 204, 409, 429, 503), paginated lists | [API reference](#api-reference), [`chat.controller.ts`](src/chat/chat.controller.ts) |
+| **Database design** | Normalized schema with every required table, UUID keys, indexed foreign keys, deliberate cascade / set-null rules, versioned migrations | [`schema.prisma`](prisma/schema.prisma), [`prisma/migrations`](prisma/migrations), [Database schema](#database-schema) |
+| **Code quality & maintainability** | Strict TypeScript, ESLint + Prettier, DTO validation, small focused services, comments explaining non-obvious decisions, unit + e2e tests | [`test/`](test/auth.e2e-spec.ts), [`http.util.spec.ts`](src/providers/adapters/http.util.spec.ts), [Testing](#testing) |
+| **Security best practices** | bcrypt passwords, AES-256-GCM encrypted API keys, Helmet headers, rate limiting, whitelisted DTOs, no leaked stack traces, user-enumeration protection, LIKE-wildcard escaping, prompt-injection wrapping, non-root container | [`crypto.service.ts`](src/common/crypto/crypto.service.ts), [`prompt-builder.ts`](src/chat/prompt-builder.ts), [Design decisions](#design-decisions) |
+| **Authentication & authorization** | JWT with refresh-token rotation and reuse detection, instant logout via session check, device/session management, `USER`/`ADMIN` roles, ownership checks, admin safety rails | [`token.service.ts`](src/auth/token.service.ts), [`jwt-auth.guard.ts`](src/common/guards/jwt-auth.guard.ts), [`roles.guard.ts`](src/common/guards/roles.guard.ts) |
+| **Error handling** | One global error shape; Prisma, body-parser and provider errors mapped to meaningful codes; retries for temporary provider failures; graceful degradation in search and compare | [`all-exceptions.filter.ts`](src/common/filters/all-exceptions.filter.ts), [`provider-errors.ts`](src/providers/provider-errors.ts), [`http.util.ts`](src/providers/adapters/http.util.ts) |
+| **Swagger documentation** | Every endpoint: parameters, request bodies with example dropdowns, response schemas, per-status error examples, auth requirements | `/docs`, [`error-examples.ts`](src/common/swagger/error-examples.ts) |
+| **Scalability** | Stateless API instances, indexed and paginated queries, cached search, non-blocking logging, containerized; concrete scale-out plan | [Scalability](#scalability) |
+| **Git commit history** | Small, focused commits in Conventional Commits style (`feat`, `fix`, `refactor`, `docs`, `test`, `build`), in logical build order | [Commit history](https://github.com/nfsrishty/echogpt-backend/commits/main) |
 
 ---
 
@@ -269,6 +290,37 @@ Also: `roles`, `conversations`, `email_verification_tokens`, `web_searches` and 
 
 ---
 
+## Scalability
+
+### What already scales
+
+| Aspect | Current design |
+|---|---|
+| **Stateless API instances** | No user state lives in server memory: JWTs are self-contained and sessions, quotas and caches live in PostgreSQL. Any instance can serve any request, so instances can be added behind a load balancer. |
+| **Indexed, bounded queries** | Every foreign key and every hot filter is indexed (e.g. the quota count uses the composite index `user_id + counts_toward_quota + created_at`). All list endpoints are paginated with a maximum page size of 100. |
+| **Caching** | Identical web searches (normalized query + result count + AI provider) are served from `search_cache` without calling the search engine or the AI model. |
+| **Non-blocking logging** | Usage logs are written after the response is sent and never delay or fail a request. |
+| **Bounded external calls** | Provider calls have timeouts (60 s chat, 120 s stream, 15 s health), retries with backoff for temporary failures only, and streams are aborted when the client disconnects. |
+| **Bounded input** | JSON bodies are limited to 1 MB; page context sent to models is truncated to 30,000 characters. |
+| **Deployment** | Containerized, with a health endpoint (`/api/v1/health`) for load balancers and orchestrators; Prisma manages a database connection pool per instance. |
+
+### Scaling out: the next steps
+
+These are the changes needed to run many instances under heavy traffic, in order of priority:
+
+| Step | Why | How |
+|---|---|---|
+| **1. Shared rate-limit storage** | The throttler counts requests in each instance's memory, so N instances allow N× the limit per client. | Redis-backed storage for `@nestjs/throttler`, so all instances share one counter. |
+| **2. Session lookup cache** | The JWT guard reads the session row on every request (one indexed primary-key lookup). | Cache active sessions in Redis with a short TTL, deleting the entry on logout/revocation to keep instant logout. |
+| **3. Queue usage-log writes** | One `INSERT` per request becomes significant at very high traffic. | Push log entries to a queue (e.g. BullMQ on Redis) and insert them in batches from a worker. |
+| **4. Log retention and partitioning** | `api_usage_logs` grows without bound. | Partition the table by month and drop or archive old partitions; the admin cleanup job already removes other expired rows. |
+| **5. Read replica for analytics** | Dashboard and analytics queries aggregate large tables. | Route admin analytics to a PostgreSQL read replica so they never compete with user traffic. |
+| **6. Migrations as a one-off job** | Each container currently runs migrations and the seed on startup: safe for one instance (Prisma's migration lock prevents concurrent migrations), but wasteful with many. | Run `prisma migrate deploy` and the seed once per release as a separate job, and start API containers with `node dist/main.js` only. |
+
+Streaming (SSE) needs no sticky sessions: each stream is a single HTTP request handled start to finish by one instance.
+
+---
+
 ## API reference
 
 Every endpoint is documented in Swagger with parameters, request bodies (with ready-made examples), response schemas, per-status error examples and auth requirements. All paths are relative to **`/api/v1`**. **Access:** Public (no token), User (any authenticated user), Admin (`ADMIN` role).
@@ -447,7 +499,7 @@ These are conscious scope decisions for this assignment:
 - **Payments:** upgrading grants a 30-day Premium period directly; in production this would run from a payment provider's webhook.
 - **Email:** verification tokens are logged to the console by `MailService`; plugging in SMTP or an email API only changes that class.
 - **Google sign-in** (shown in the extension) is not implemented.
-- **Horizontal scaling:** rate limiting uses in-memory storage. Running several instances would need a shared store (e.g. Redis) for the throttler, and a queue for usage-log writes at high volume.
+- **Horizontal scaling:** rate limiting uses in-memory storage; see [Scalability](#scalability) for the scale-out plan.
 - **One default provider** is enforced in a transaction; a partial unique index in the database would be a further safeguard.
 - **Compare** counts as one request toward the daily quota even though it calls 2-3 models; a per-request quota cost would need an extra column.
 
