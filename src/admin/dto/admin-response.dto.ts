@@ -238,6 +238,20 @@ class DatabaseHealthDto {
     number | null;
 }
 
+class RateLimitStoreHealthDto {
+  @ApiProperty({
+    enum: ['redis', 'memory'],
+    description: 'redis = shared by all instances; memory = this instance only',
+  })
+  mode: 'redis' | 'memory';
+
+  @ApiProperty({ enum: ['up', 'down'] })
+  status: 'up' | 'down';
+
+  @ApiProperty({ type: Number, nullable: true, example: 1 })
+  latencyMs: number | null;
+}
+
 class ProvidersHealthSummaryDto {
   @ApiProperty({ example: 3 }) enabled: number;
   @ApiProperty({ example: 2 }) healthy: number;
@@ -258,6 +272,12 @@ export class SystemHealthResponseDto {
   @ApiProperty({ example: 3600 }) uptimeSeconds: number;
   @ApiProperty({ type: MemoryDto }) memory: MemoryDto;
   @ApiProperty({ type: DatabaseHealthDto }) database: DatabaseHealthDto;
+  @ApiProperty({
+    type: RateLimitStoreHealthDto,
+    description:
+      'Where rate-limit counters live. If Redis is down, requests are allowed uncounted (fail open).',
+  })
+  rateLimitStore: RateLimitStoreHealthDto;
   @ApiProperty({
     type: ProvidersHealthSummaryDto,
     description: 'From the last stored health checks (no live calls)',

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ProviderHealthStatus } from '@prisma/client';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { RateLimitStorage } from '../common/rate-limit/rate-limit.storage';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CleanupResponseDto,
@@ -18,10 +19,14 @@ export class AdminSystemService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly rateLimitStorage: RateLimitStorage,
   ) {}
 
   async health(): Promise<SystemHealthResponseDto> {
-    const database = await this.pingDatabase();
+    const [database, rateLimitStore] = await Promise.all([
+      this.pingDatabase(),
+      this.rateLimitStorage.ping(),
+    ]);
 
     const providers =
       database.status === 'up'
@@ -36,11 +41,14 @@ export class AdminSystemService {
     const healthy = countStatus(ProviderHealthStatus.HEALTHY);
     const memory = process.memoryUsage();
 
-    // down = database unreachable; degraded = no AI provider known to work.
+    // down = database unreachable; degraded = no AI provider known to work,
+    // or the shared rate-limit store is unreachable (limits not enforced).
     const status =
       database.status === 'down'
         ? 'down'
-        : providers.length === 0 || healthy === 0
+        : providers.length === 0 ||
+            healthy === 0 ||
+            rateLimitStore.status === 'down'
           ? 'degraded'
           : 'ok';
 
@@ -54,6 +62,7 @@ export class AdminSystemService {
         heapUsedMb: Math.round(memory.heapUsed / 1024 / 1024),
       },
       database,
+      rateLimitStore: { mode: this.rateLimitStorage.mode, ...rateLimitStore },
       providers: {
         enabled: providers.length,
         healthy,
