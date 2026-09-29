@@ -37,6 +37,7 @@ Built with **NestJS 11, PostgreSQL 16, Prisma 6 and Swagger (OpenAPI 3)**.
 | **Chat** | Send a prompt, receive the answer, provider/model selection, conversation history, **Server-Sent Events streaming** (bonus), **page tools** (summarize page, explain selection, ask about the page; page text is never stored), **compare answers from 2-3 models** side by side |
 | **Web search** | AI-assisted search (results + cited AI answer), search history, recent searches, autocomplete suggestions, **result caching** (bonus) |
 | **Admin panel** | Dashboard statistics, user management, subscription and plan management, provider management, usage analytics, request logs, system health, cleanup job |
+| **Scalability** | Stateless API instances; **Redis-backed rate limiting** shared by every instance (and failing open if Redis is unavailable); indexed, paginated queries; cached search |
 | **Docs & tooling** | Swagger for every endpoint (bodies, parameters, per-status error examples, auth), Postman collection, Docker, migrations, seed, unit + e2e tests |
 
 ---
@@ -55,7 +56,7 @@ Where each assessment criterion is addressed in the code:
 | **Authentication & authorization** | JWT with refresh-token rotation and reuse detection, instant logout via session check, device/session management, `USER`/`ADMIN` roles, ownership checks, admin safety rails | [`token.service.ts`](src/auth/token.service.ts), [`jwt-auth.guard.ts`](src/common/guards/jwt-auth.guard.ts), [`roles.guard.ts`](src/common/guards/roles.guard.ts) |
 | **Error handling** | One global error shape; Prisma, body-parser and provider errors mapped to meaningful codes; retries for temporary provider failures; graceful degradation in search and compare | [`all-exceptions.filter.ts`](src/common/filters/all-exceptions.filter.ts), [`provider-errors.ts`](src/providers/provider-errors.ts), [`http.util.ts`](src/providers/adapters/http.util.ts) |
 | **Swagger documentation** | Every endpoint: parameters, request bodies with example dropdowns, response schemas, per-status error examples, auth requirements | `/docs`, [`error-examples.ts`](src/common/swagger/error-examples.ts) |
-| **Scalability** | Stateless API instances, indexed and paginated queries, cached search, non-blocking logging, containerized; concrete scale-out plan | [Scalability](#scalability) |
+| **Scalability** | Stateless API instances; rate limits shared across instances through Redis (verified with two instances enforcing one combined limit), failing open during a Redis outage; indexed and paginated queries; cached search; non-blocking logging; concrete plan for the next steps | [Scalability](#scalability), [`rate-limit.storage.ts`](src/common/rate-limit/rate-limit.storage.ts), [`fail-open-throttler.storage.ts`](src/common/rate-limit/fail-open-throttler.storage.ts) |
 | **Git commit history** | Small, focused commits in Conventional Commits style (`feat`, `fix`, `refactor`, `docs`, `test`, `build`), in logical build order | [Commit history](https://github.com/nfsrishty/echogpt-backend/commits/main) |
 
 ---
@@ -77,12 +78,12 @@ npm run setup:env        # creates .env with freshly generated secrets
 docker compose --profile app up --build
 ```
 
-The API container applies migrations, seeds roles, plans and the admin account, then starts. Open **http://localhost:3000/docs**.
+This starts PostgreSQL, Redis and the API. The API container applies migrations, seeds roles, plans and the admin account, then starts with Redis-backed rate limiting. Open **http://localhost:3000/docs**.
 
 ### Option B: local development (hot reload)
 
 ```bash
-docker compose up -d                          # PostgreSQL only (host port 5433)
+docker compose up -d                          # PostgreSQL (port 5433) + Redis (port 6380)
 npx prisma migrate dev                        # apply migrations
 npm run db:seed                               # roles, plans, admin account
 npm run start:dev                             # http://localhost:3000
@@ -114,6 +115,7 @@ All variables are validated at startup with Joi: the app refuses to boot with a 
 | `JWT_REFRESH_EXPIRES_IN` | | `7d` | Refresh token lifetime |
 | `PORT` | | `3000` | HTTP port |
 | `CORS_ORIGINS` | | `*` | Comma-separated origins, e.g. `chrome-extension://<id>` |
+| `REDIS_URL` | | empty | Rate-limit counter store. Empty = in-process memory (one instance). `redis://localhost:6380` = the Redis from `docker compose up -d`, shared by all instances |
 | `TAVILY_API_KEY` | | empty | Web search key. Empty = Tavily **keyless mode** (works out of the box, lower limits) |
 | `TAVILY_BASE_URL` | | `https://api.tavily.com` | Search API base URL |
 | `SEARCH_CACHE_TTL_SECONDS` | | `3600` | Search cache lifetime (`0` disables caching) |
@@ -166,6 +168,7 @@ flowchart LR
     end
 
     S --> DB[(PostgreSQL)]
+    G1 -.shared counters.-> RD[(Redis)]
     S --> AD{{Provider adapters}}
     AD --> OAI[OpenAI]
     AD --> ANT[Anthropic]
@@ -173,7 +176,7 @@ flowchart LR
     S --> TAV[Tavily web search]
 ```
 
-**Request lifecycle.** Every request passes, in order: the **usage-logging middleware** (records method, path, status, latency, tokens after the response; runs first so it also sees rejected requests), the **rate-limit guard** (100 req/min per IP; 5/min on login, register and resend-verification), the **JWT guard** (signature plus a check that the session still exists), the **roles guard** (`@Roles(ADMIN)`), the **quota guard** (daily plan limit on AI routes), and the **validation pipe** (whitelisting DTOs: unknown fields are rejected). Any error becomes one JSON shape through the global exception filter:
+**Request lifecycle.** Every request passes, in order: the **usage-logging middleware** (records method, path, status, latency, tokens after the response; runs first so it also sees rejected requests), the **rate-limit guard** (100 req/min per IP; 5/min on login, register and resend-verification; counters in Redis when `REDIS_URL` is set, so all instances share them), the **JWT guard** (signature plus a check that the session still exists), the **roles guard** (`@Roles(ADMIN)`), the **quota guard** (daily plan limit on AI routes), and the **validation pipe** (whitelisting DTOs: unknown fields are rejected). Any error becomes one JSON shape through the global exception filter:
 
 ```json
 { "statusCode": 404, "error": "Not Found", "message": "Conversation not found", "path": "/api/v1/chat/conversations/…", "timestamp": "…" }
@@ -286,6 +289,7 @@ Also: `roles`, `conversations`, `email_verification_tokens`, `web_searches` and 
 | **Search cache key includes the AI provider** | The same query summarized by different models gives different answers. Failed summaries are never cached. |
 | **Privacy-preserving suggestions** | Autocomplete shows your own history, plus queries searched by at least 3 different users in the last 30 days, so one person's private searches are never suggested to others. LIKE wildcards in user input are escaped. |
 | **Admin safety rails** | Admins cannot change their own role, delete themselves from the admin panel, or remove the last admin. |
+| **Rate limits shared through Redis, failing open** | In memory, each instance counts separately, so N instances allow N× the limit. With `REDIS_URL` all instances share one counter per client. If Redis becomes unreachable, requests are allowed uncounted and a warning is logged, instead of the whole API failing; counting resumes automatically, and admin system health reports `degraded` meanwhile. |
 | **Request logging as middleware** | Guards run before interceptors, so an interceptor would miss rejected requests (401/403/429). The middleware logs after the response, fire-and-forget, never slowing the request; it also handles client disconnects. |
 
 ---
@@ -297,6 +301,7 @@ Also: `roles`, `conversations`, `email_verification_tokens`, `web_searches` and 
 | Aspect | Current design |
 |---|---|
 | **Stateless API instances** | No user state lives in server memory: JWTs are self-contained and sessions, quotas and caches live in PostgreSQL. Any instance can serve any request, so instances can be added behind a load balancer. |
+| **Shared rate limiting** | With `REDIS_URL` set (the default in Docker Compose), rate-limit counters live in Redis, so all instances enforce one combined limit per client. Verified with two instances: attempts 1-5 of a 5/min limit were accepted across both, and the 6th was rejected by whichever instance received it. If Redis goes down, the API keeps serving requests (fail open) and recovers automatically. |
 | **Indexed, bounded queries** | Every foreign key and every hot filter is indexed (e.g. the quota count uses the composite index `user_id + counts_toward_quota + created_at`). All list endpoints are paginated with a maximum page size of 100. |
 | **Caching** | Identical web searches (normalized query + result count + AI provider) are served from `search_cache` without calling the search engine or the AI model. |
 | **Non-blocking logging** | Usage logs are written after the response is sent and never delay or fail a request. |
@@ -310,12 +315,11 @@ These are the changes needed to run many instances under heavy traffic, in order
 
 | Step | Why | How |
 |---|---|---|
-| **1. Shared rate-limit storage** | The throttler counts requests in each instance's memory, so N instances allow N× the limit per client. | Redis-backed storage for `@nestjs/throttler`, so all instances share one counter. |
-| **2. Session lookup cache** | The JWT guard reads the session row on every request (one indexed primary-key lookup). | Cache active sessions in Redis with a short TTL, deleting the entry on logout/revocation to keep instant logout. |
-| **3. Queue usage-log writes** | One `INSERT` per request becomes significant at very high traffic. | Push log entries to a queue (e.g. BullMQ on Redis) and insert them in batches from a worker. |
-| **4. Log retention and partitioning** | `api_usage_logs` grows without bound. | Partition the table by month and drop or archive old partitions; the admin cleanup job already removes other expired rows. |
-| **5. Read replica for analytics** | Dashboard and analytics queries aggregate large tables. | Route admin analytics to a PostgreSQL read replica so they never compete with user traffic. |
-| **6. Migrations as a one-off job** | Each container currently runs migrations and the seed on startup: safe for one instance (Prisma's migration lock prevents concurrent migrations), but wasteful with many. | Run `prisma migrate deploy` and the seed once per release as a separate job, and start API containers with `node dist/main.js` only. |
+| **1. Session lookup cache** | The JWT guard reads the session row on every request (one indexed primary-key lookup). | Cache active sessions in the existing Redis with a short TTL, deleting the entry on logout/revocation to keep instant logout. |
+| **2. Queue usage-log writes** | One `INSERT` per request becomes significant at very high traffic. | Push log entries to a queue (e.g. BullMQ on the existing Redis) and insert them in batches from a worker. |
+| **3. Log retention and partitioning** | `api_usage_logs` grows without bound. | Partition the table by month and drop or archive old partitions; the admin cleanup job already removes other expired rows. |
+| **4. Read replica for analytics** | Dashboard and analytics queries aggregate large tables. | Route admin analytics to a PostgreSQL read replica so they never compete with user traffic. |
+| **5. Migrations as a one-off job** | Each container currently runs migrations and the seed on startup: safe for one instance (Prisma's migration lock prevents concurrent migrations), but wasteful with many. | Run `prisma migrate deploy` and the seed once per release as a separate job, and start API containers with `node dist/main.js` only. |
 
 Streaming (SSE) needs no sticky sessions: each stream is a single HTTP request handled start to finish by one instance.
 
@@ -440,7 +444,7 @@ Every endpoint is documented in Swagger with parameters, request bodies (with re
 ## Testing
 
 ```bash
-npm test             # unit tests: encryption, SSE parsing, retry logic, page-tool prompts, utilities
+npm test             # unit tests: encryption, SSE parsing, retries, rate-limit fail-open, page-tool prompts, utilities
 npm run test:e2e     # end-to-end auth flow against the real database
 npm run lint
 ```
@@ -462,6 +466,7 @@ src/
 │   ├── filters/      global exception filter (single error shape)
 │   ├── guards/       JWT auth guard, roles guard
 │   ├── middleware/   API usage / request logging
+│   ├── rate-limit/   Redis / in-memory rate-limit storage (fail open)
 │   ├── swagger/      per-status error examples for the OpenAPI document
 │   └── utils/        hashing, passwords, SQL, user-agent helpers
 ├── config/           environment validation (Joi)
@@ -499,7 +504,7 @@ These are conscious scope decisions for this assignment:
 - **Payments:** upgrading grants a 30-day Premium period directly; in production this would run from a payment provider's webhook.
 - **Email:** verification tokens are logged to the console by `MailService`; plugging in SMTP or an email API only changes that class.
 - **Google sign-in** (shown in the extension) is not implemented.
-- **Horizontal scaling:** rate limiting uses in-memory storage; see [Scalability](#scalability) for the scale-out plan.
+- **Horizontal scaling:** rate limiting is already shared through Redis; the remaining steps (session cache, log queue, partitioning, read replica) are listed under [Scalability](#scalability).
 - **One default provider** is enforced in a transaction; a partial unique index in the database would be a further safeguard.
 - **Compare** counts as one request toward the daily quota even though it calls 2-3 models; a per-request quota cost would need an extra column.
 
